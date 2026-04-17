@@ -1,6 +1,5 @@
 // ════════════════════════════════════
 // ① 在這裡填入你的 Firebase 設定
-//    （第五步會說明怎麼取得）
 // ════════════════════════════════════
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
@@ -23,19 +22,19 @@ const auth = getAuth(app);
 const db   = getFirestore(app);
 
 // ════════════════════════════════════
-// ② 家庭成員設定（依需求修改）
+// ② 家庭成員設定
 // ════════════════════════════════════
 const MEMBERS = [
-  { id:'dad',  name:'爸爸', c:'#378ADD', bg:'#E6F1FB', tx:'#0C447C', grp:null },
-  { id:'mom',  name:'媽媽', c:'#D4537E', bg:'#FBEAF0', tx:'#72243E', grp:null },
-  { id:'mz',   name:'孟孜', c:'#1D9E75', bg:'#E1F5EE', tx:'#085041', grp:'孟孜家' },
-  { id:'hw',   name:'竑緯', c:'#1D9E75', bg:'#E1F5EE', tx:'#085041', grp:'孟孜家' },
-  { id:'yc',   name:'祐丞', c:'#1D9E75', bg:'#E1F5EE', tx:'#085041', grp:'孟孜家' },
-  { id:'ym',   name:'祐名', c:'#1D9E75', bg:'#E1F5EE', tx:'#085041', grp:'孟孜家' },
-  { id:'my',   name:'孟妤', c:'#7F77DD', bg:'#EEEDFE', tx:'#3C3489', grp:'孟妤家' },
-  { id:'mh',   name:'明輝', c:'#7F77DD', bg:'#EEEDFE', tx:'#3C3489', grp:'孟妤家' },
-  { id:'yl',   name:'宥綝', c:'#7F77DD', bg:'#EEEDFE', tx:'#3C3489', grp:'孟妤家' },
-  { id:'yi',   name:'宥依', c:'#7F77DD', bg:'#EEEDFE', tx:'#3C3489', grp:'孟妤家' },
+  { id:'dad', name:'爸爸', c:'#378ADD', bg:'#E6F1FB', tx:'#0C447C', grp:null },
+  { id:'mom', name:'媽媽', c:'#D4537E', bg:'#FBEAF0', tx:'#72243E', grp:null },
+  { id:'mz',  name:'孟孜', c:'#1D9E75', bg:'#E1F5EE', tx:'#085041', grp:'孟孜家' },
+  { id:'hw',  name:'竑緯', c:'#1D9E75', bg:'#E1F5EE', tx:'#085041', grp:'孟孜家' },
+  { id:'yc',  name:'祐丞', c:'#1D9E75', bg:'#E1F5EE', tx:'#085041', grp:'孟孜家' },
+  { id:'ym',  name:'祐名', c:'#1D9E75', bg:'#E1F5EE', tx:'#085041', grp:'孟孜家' },
+  { id:'my',  name:'孟妤', c:'#7F77DD', bg:'#EEEDFE', tx:'#3C3489', grp:'孟妤家' },
+  { id:'mh',  name:'明輝', c:'#7F77DD', bg:'#EEEDFE', tx:'#3C3489', grp:'孟妤家' },
+  { id:'yl',  name:'宥綝', c:'#7F77DD', bg:'#EEEDFE', tx:'#3C3489', grp:'孟妤家' },
+  { id:'yi',  name:'宥依', c:'#7F77DD', bg:'#EEEDFE', tx:'#3C3489', grp:'孟妤家' },
 ];
 const GROUPS = { '孟孜家':['mz','hw','yc','ym'], '孟妤家':['my','mh','yl','yi'] };
 const MM = {};
@@ -160,10 +159,15 @@ function renderUpcoming() {
     byD[ds].forEach(e => {
       const tags = resolve(e.ids||[]);
       const thtml = tags.map(t => `<span class="tag" style="background:${t.bg};color:${t.tx}">${t.label}</span>`).join('');
+      // 備註：有備註才顯示
+      const noteHtml = e.note ? `<div class="ev-note">${e.note}</div>` : '';
       html += `<div class="ev-row" onclick="openEdit('${e.id}')">
         <div class="ev-time">${e.time}</div>
-        <div class="ev-body"><div class="ev-name">${e.name}</div>
-        <div class="ev-tags">${thtml}</div></div></div>`;
+        <div class="ev-body">
+          <div class="ev-name">${e.name}</div>
+          <div class="ev-tags">${thtml}</div>
+          ${noteHtml}
+        </div></div>`;
     });
     html += '</div>';
   });
@@ -245,6 +249,7 @@ window.openModal = () => {
   document.getElementById('f-name').value = '';
   document.getElementById('f-date').value = TS;
   document.getElementById('f-time').value = '10:00';
+  document.getElementById('f-note').value = '';      // 清空備註
   document.getElementById('btn-delete').style.display = 'none';
   document.getElementById('preview-row').innerHTML = '';
   buildMembers();
@@ -259,6 +264,7 @@ window.openEdit = id => {
   document.getElementById('f-name').value = e.name;
   document.getElementById('f-date').value = e.date;
   document.getElementById('f-time').value = e.time;
+  document.getElementById('f-note').value = e.note || '';  // 帶入備註
   document.getElementById('btn-delete').style.display = '';
   document.getElementById('preview-row').innerHTML = '';
   buildMembers();
@@ -276,9 +282,10 @@ window.saveEv = async () => {
   const name = document.getElementById('f-name').value.trim();
   const date = document.getElementById('f-date').value;
   const time = document.getElementById('f-time').value;
+  const note = document.getElementById('f-note').value.trim();   // 讀取備註
   const ids  = [...document.querySelectorAll('.mchk:checked')].map(c => c.value);
   if (!name || !date) return;
-  const data = { name, date, time, ids };
+  const data = { name, date, time, note, ids };
   if (editingId) {
     await updateDoc(doc(db,'events',editingId), data);
   } else {
