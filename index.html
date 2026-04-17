@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="manifest.json">
+<title>家庭行事曆</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#fff;color:#111}
+.app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;border-bottom:1px solid #eee;position:sticky;top:0;background:#fff;z-index:10}
+.logo{font-size:15px;font-weight:600}
+.topright{display:flex;gap:6px;align-items:center}
+.view-btn{font-size:12px;font-weight:500;padding:6px 13px;border-radius:20px;
+  border:1px solid #ddd;background:transparent;cursor:pointer;color:#888;font-family:inherit}
+.view-btn.on{background:#111;color:#fff;border-color:#111}
+.add-btn{font-size:13px;font-weight:500;padding:6px 14px;border:1px solid #ddd;
+  border-radius:8px;background:transparent;color:#111;cursor:pointer;font-family:inherit}
+.add-btn:hover{background:#f5f5f5}
+.view{display:none;flex:1;padding:16px}
+.view.on{display:block}
+.login-screen{display:flex;flex-direction:column;align-items:center;
+  justify-content:center;min-height:70vh;gap:16px;padding:32px}
+.login-title{font-size:20px;font-weight:600}
+.login-sub{font-size:14px;color:#888;text-align:center}
+.google-btn{display:flex;align-items:center;gap:10px;padding:12px 24px;
+  border:1px solid #ddd;border-radius:10px;background:#fff;cursor:pointer;
+  font-size:14px;font-weight:500;font-family:inherit}
+.google-btn:hover{background:#f5f5f5}
+.date-group{margin-bottom:24px}
+.date-hd{display:flex;align-items:baseline;gap:8px;padding-bottom:8px;
+  border-bottom:1px solid #eee;margin-bottom:2px}
+.date-main{font-size:15px;font-weight:600}
+.date-badge{font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;
+  background:#f2f2f2;color:#888}
+.date-badge.near{background:#FFF0E6;color:#B04A00}
+.ev-row{display:flex;align-items:flex-start;gap:12px;padding:11px 0;
+  border-bottom:1px solid #f0f0f0;cursor:pointer}
+.ev-row:last-child{border-bottom:none}
+.ev-time{font-size:13px;color:#aaa;min-width:42px;padding-top:2px;flex-shrink:0}
+.ev-body{flex:1;min-width:0}
+.ev-name{font-size:15px;font-weight:500;margin-bottom:5px}
+.ev-tags{display:flex;flex-wrap:wrap;gap:5px}
+.tag{font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px}
+.empty{font-size:14px;color:#bbb;padding:40px 0;text-align:center}
+.cal-nav{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.cal-title{flex:1;text-align:center;font-size:15px;font-weight:600}
+.nav-btn{width:32px;height:32px;border-radius:50%;border:1px solid #eee;
+  background:transparent;cursor:pointer;font-size:18px;color:#888;font-family:inherit}
+.wds{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px}
+.wd{text-align:center;font-size:11px;font-weight:500;color:#bbb;padding:4px 0}
+.dgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.dc{min-height:68px;border-radius:7px;padding:5px 4px;cursor:pointer;border:1px solid transparent}
+.dc:hover{background:#f8f8f8}
+.dc.other{opacity:0.3}
+.dc.today .dn{background:#111;color:#fff;border-radius:50%}
+.dn{font-size:11px;font-weight:500;width:20px;height:20px;
+  display:flex;align-items:center;justify-content:center;margin-bottom:3px}
+.dev{font-size:9px;font-weight:500;padding:2px 4px;border-radius:3px;
+  margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.32);
+  z-index:100;align-items:flex-start;justify-content:center;padding-top:48px}
+.overlay.on{display:flex}
+.modal{background:#fff;border-radius:14px;border:1px solid #eee;padding:20px;
+  width:92%;max-width:340px;max-height:82vh;overflow-y:auto;
+  box-shadow:0 8px 32px rgba(0,0,0,.12)}
+.modal-title{font-size:15px;font-weight:600;margin-bottom:16px}
+.field{margin-bottom:13px}
+.field label{font-size:12px;color:#888;display:block;margin-bottom:5px;font-weight:500}
+.field input{width:100%;font-size:14px;padding:8px 11px;border:1px solid #ddd;
+  border-radius:8px;background:#fff;color:#111;font-family:inherit}
+.grp-label{font-size:10px;font-weight:600;color:#bbb;letter-spacing:.06em;
+  width:100%;margin-top:10px;margin-bottom:5px}
+.member-wrap{display:flex;flex-wrap:wrap;gap:6px}
+.mchk{display:none}
+.mlbl{font-size:12px;font-weight:500;padding:5px 12px;border-radius:20px;
+  border:1px solid #ddd;cursor:pointer;color:#888;font-family:inherit;user-select:none}
+.preview-row{display:flex;flex-wrap:wrap;gap:5px;min-height:26px;margin-top:8px}
+.ptag{font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.btn-cancel{font-size:13px;padding:7px 16px;border:1px solid #ddd;border-radius:8px;
+  background:transparent;color:#888;cursor:pointer;font-family:inherit}
+.btn-delete{font-size:13px;padding:7px 16px;border:1px solid #fcc;border-radius:8px;
+  background:transparent;color:#c00;cursor:pointer;font-family:inherit}
+.btn-save{font-size:13px;font-weight:500;padding:7px 16px;border:none;
+  border-radius:8px;background:#111;color:#fff;cursor:pointer;font-family:inherit}
+.loading{text-align:center;padding:40px;color:#bbb;font-size:14px}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="loading" id="loading">載入中...</div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">新增行程</div>
+    <div class="field"><label>行程名稱</label><input id="f-name" placeholder="例：爸爸回診"/></div>
+    <div class="field"><label>日期</label><input id="f-date" type="date"/></div>
+    <div class="field"><label>時間</label><input id="f-time" type="time" value="10:00"/></div>
+    <div class="field">
+      <label>參與成員（可複選）</label>
+      <div class="member-wrap" id="member-wrap"></div>
+      <div class="preview-row" id="preview-row"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-delete" id="btn-delete" style="display:none" onclick="deleteEv()">刪除</button>
+      <button class="btn-save" onclick="saveEv()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module" src="app.js"></script>
+</body>
+</html>
