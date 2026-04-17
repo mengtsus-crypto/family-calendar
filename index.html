@@ -44,6 +44,12 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#fff;color:#111}
 .ev-body{flex:1;min-width:0}
 .ev-name{font-size:15px;font-weight:500;margin-bottom:5px}
 .ev-tags{display:flex;flex-wrap:wrap;gap:5px}
+  .ev-note {
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 5px;
+  line-height: 1.5;
+}
 .tag{font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px}
 .empty{font-size:14px;color:#bbb;padding:40px 0;text-align:center}
 .cal-nav{display:flex;align-items:center;gap:10px;margin-bottom:14px}
@@ -106,6 +112,10 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#fff;color:#111}
       <div class="member-wrap" id="member-wrap"></div>
       <div class="preview-row" id="preview-row"></div>
     </div>
+    <div class="field">
+  <label>備註（選填）</label>
+  <input id="f-note" placeholder="例：記得帶健保卡"/>
+</div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeModal()">取消</button>
       <button class="btn-delete" id="btn-delete" style="display:none" onclick="deleteEv()">刪除</button>
