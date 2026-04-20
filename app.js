@@ -40,6 +40,8 @@ const GROUPS = { '孟孜家':['mz','hw','yc','ym'], '孟妤家':['my','mh','yl',
 const MM = {};
 MEMBERS.forEach(m => MM[m.id] = m);
 
+const TIME_PERIODS = { allday:'整日', morning:'上午', afternoon:'下午', evening:'晚上' };
+
 // ════════════════════════════════════
 // 工具函式
 // ════════════════════════════════════
@@ -52,6 +54,17 @@ let editingId = null;
 const fmt = d => d.getFullYear() + '-' + p2(d.getMonth()+1) + '-' + p2(d.getDate());
 const p2  = n => n < 10 ? '0'+n : ''+n;
 const TS  = fmt(today);
+
+function fmtDisplay(ds) {
+  const d = new Date(ds);
+  return `${d.getMonth()+1}月${d.getDate()}日（${WD[d.getDay()]}）`;
+}
+
+function fmtTime(e) {
+  if (e.period && TIME_PERIODS[e.period]) return TIME_PERIODS[e.period];
+  if (e.time) return e.time;
+  return '—';
+}
 
 function resolve(ids) {
   if (!ids?.length) return [];
@@ -67,6 +80,17 @@ function resolve(ids) {
   return out;
 }
 
+window.toggleDateEnd = () => {
+  const on = document.getElementById('use-range').checked;
+  document.getElementById('date-end-row').style.display = on ? '' : 'none';
+  if (!on) document.getElementById('f-date-end').value = '';
+};
+
+window.toggleTimeInput = () => {
+  const val = document.getElementById('f-period').value;
+  document.getElementById('time-custom-row').style.display = val === 'custom' ? '' : 'none';
+};
+
 // ════════════════════════════════════
 // 登入 / 登出
 // ════════════════════════════════════
@@ -75,12 +99,8 @@ window.loginWithGoogle = () => signInWithPopup(auth, provider);
 window.logout = () => signOut(auth);
 
 onAuthStateChanged(auth, user => {
-  if (user) {
-    renderApp(user);
-    listenEvents();
-  } else {
-    renderLogin();
-  }
+  if (user) { renderApp(user); listenEvents(); }
+  else       { renderLogin(); }
 });
 
 function renderLogin() {
@@ -138,42 +158,69 @@ function listenEvents() {
 }
 
 // ════════════════════════════════════
-// 畫面渲染
+// 畫面渲染 — 清單
 // ════════════════════════════════════
 function renderUpcoming() {
   const el = document.getElementById('upcoming-content');
   if (!el) return;
-  const up = evs.filter(e => e.date >= TS)
-    .sort((a,b) => a.date === b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date));
-  if (!up.length) { el.innerHTML = '<div class="empty">目前沒有即將到來的行程 🎉</div>'; return; }
+
+  const up = evs
+    .filter(e => (e.dateEnd || e.date) >= TS)
+    .sort((a,b) => a.date === b.date
+      ? (a.time||'').localeCompare(b.time||'')
+      : a.date.localeCompare(b.date));
+
+  if (!up.length) {
+    el.innerHTML = '<div class="empty">目前沒有即將到來的行程 🎉</div>';
+    return;
+  }
+
   const byD = {}, order = [];
-  up.forEach(e => { if (!byD[e.date]) { byD[e.date]=[]; order.push(e.date); } byD[e.date].push(e); });
+  up.forEach(e => {
+    if (!byD[e.date]) { byD[e.date]=[]; order.push(e.date); }
+    byD[e.date].push(e);
+  });
+
   let html = '';
   order.forEach(ds => {
-    const diff = Math.round((new Date(ds) - new Date(TS)) / 86400000);
-    const badge = diff===0?'今天':diff===1?'明天':diff===2?'後天':diff+'天後';
-    const d = new Date(ds);
-    html += `<div class="date-group"><div class="date-hd">
-      <span class="date-main">${d.getMonth()+1}月${d.getDate()}日（${WD[d.getDay()]}）</span>
-      <span class="date-badge${diff<=2?' near':''}">${badge}</span></div>`;
+    const diff  = Math.round((new Date(ds) - new Date(TS)) / 86400000);
+    const badge = diff===0?'今天':diff===1?'明天':diff===2?'後天':diff>0?diff+'天後':'進行中';
+    const near  = diff >= 0 && diff <= 2;
+    const d     = new Date(ds);
+
+    html += `<div class="date-group">
+      <div class="date-hd">
+        <span class="date-main">${d.getMonth()+1}月${d.getDate()}日（${WD[d.getDay()]}）</span>
+        <span class="date-badge${near?' near':''}">${badge}</span>
+      </div>`;
+
     byD[ds].forEach(e => {
-      const tags = resolve(e.ids||[]);
-      const thtml = tags.map(t => `<span class="tag" style="background:${t.bg};color:${t.tx}">${t.label}</span>`).join('');
-      // 備註：有備註才顯示
-      const noteHtml = e.note ? `<div class="ev-note">${e.note}</div>` : '';
+      const tags     = resolve(e.ids||[]);
+      const thtml    = tags.map(t => `<span class="tag" style="background:${t.bg};color:${t.tx}">${t.label}</span>`).join('');
+      const timeStr  = fmtTime(e);
+      const rangeHtml = (e.dateEnd && e.dateEnd !== e.date)
+        ? `<div class="ev-range">至 ${fmtDisplay(e.dateEnd)}</div>` : '';
+      const noteHtml  = e.note ? `<div class="ev-note">${e.note}</div>` : '';
+
       html += `<div class="ev-row" onclick="openEdit('${e.id}')">
-        <div class="ev-time">${e.time}</div>
+        <div class="ev-time">${timeStr}</div>
         <div class="ev-body">
           <div class="ev-name">${e.name}</div>
+          ${rangeHtml}
           <div class="ev-tags">${thtml}</div>
           ${noteHtml}
-        </div></div>`;
+        </div>
+      </div>`;
     });
+
     html += '</div>';
   });
   el.innerHTML = html;
 }
 
+// ════════════════════════════════════
+// 畫面渲染 — 月曆
+// ════════════════════════════════════
 function renderCal() {
   const y = cur.getFullYear(), mo = cur.getMonth();
   const el = document.getElementById('cal-title');
@@ -190,7 +237,8 @@ function renderCal() {
 
 function dc(d, ds, other) {
   const isT = ds===TS;
-  const dayEvs = evs.filter(e => e.date===ds);
+  // 顯示當天開始，或跨日區間包含當天的行程
+  const dayEvs = evs.filter(e => e.date===ds || (e.dateEnd && e.date<=ds && e.dateEnd>=ds));
   const ehtml = dayEvs.slice(0,2).map(e => {
     const tg = resolve(e.ids||[])[0];
     return `<div class="dev" style="background:${tg?.bg||'#eee'};color:${tg?.tx||'#555'}">${e.name}</div>`;
@@ -211,7 +259,7 @@ window.setView = v => {
 window.chMo = n => { cur = new Date(cur.getFullYear(), cur.getMonth()+n, 1); renderCal(); };
 
 // ════════════════════════════════════
-// 新增 / 編輯 Modal
+// Modal — 新增 / 編輯
 // ════════════════════════════════════
 function buildMembers() {
   let html = '<span class="grp-label">個人</span>';
@@ -246,12 +294,17 @@ function updatePreview() {
 window.openModal = () => {
   editingId = null;
   document.getElementById('modal-title').textContent = '新增行程';
-  document.getElementById('f-name').value = '';
-  document.getElementById('f-date').value = TS;
-  document.getElementById('f-time').value = '10:00';
-  document.getElementById('f-note').value = '';      // 清空備註
+  document.getElementById('f-name').value     = '';
+  document.getElementById('f-date').value     = TS;
+  document.getElementById('f-date-end').value = '';
+  document.getElementById('f-period').value   = 'allday';
+  document.getElementById('f-time').value     = '10:00';
+  document.getElementById('f-note').value     = '';
+  document.getElementById('use-range').checked = false;
   document.getElementById('btn-delete').style.display = 'none';
   document.getElementById('preview-row').innerHTML = '';
+  document.getElementById('date-end-row').style.display  = 'none';
+  document.getElementById('time-custom-row').style.display = 'none';
   buildMembers();
   document.getElementById('overlay').classList.add('on');
 };
@@ -263,8 +316,18 @@ window.openEdit = id => {
   document.getElementById('modal-title').textContent = '編輯行程';
   document.getElementById('f-name').value = e.name;
   document.getElementById('f-date').value = e.date;
-  document.getElementById('f-time').value = e.time;
-  document.getElementById('f-note').value = e.note || '';  // 帶入備註
+  document.getElementById('f-note').value = e.note || '';
+
+  const hasRange = !!(e.dateEnd && e.dateEnd !== e.date);
+  document.getElementById('use-range').checked = hasRange;
+  document.getElementById('f-date-end').value  = e.dateEnd || '';
+  document.getElementById('date-end-row').style.display = hasRange ? '' : 'none';
+
+  const period = e.period || 'custom';
+  document.getElementById('f-period').value = period;
+  document.getElementById('f-time').value   = e.time || '10:00';
+  document.getElementById('time-custom-row').style.display = period === 'custom' ? '' : 'none';
+
   document.getElementById('btn-delete').style.display = '';
   document.getElementById('preview-row').innerHTML = '';
   buildMembers();
@@ -279,13 +342,22 @@ window.openEdit = id => {
 window.closeModal = () => document.getElementById('overlay').classList.remove('on');
 
 window.saveEv = async () => {
-  const name = document.getElementById('f-name').value.trim();
-  const date = document.getElementById('f-date').value;
-  const time = document.getElementById('f-time').value;
-  const note = document.getElementById('f-note').value.trim();   // 讀取備註
-  const ids  = [...document.querySelectorAll('.mchk:checked')].map(c => c.value);
+  const name    = document.getElementById('f-name').value.trim();
+  const date    = document.getElementById('f-date').value;
+  const useRange= document.getElementById('use-range').checked;
+  const dateEnd = useRange ? document.getElementById('f-date-end').value : date;
+  const period  = document.getElementById('f-period').value;
+  const time    = period === 'custom' ? document.getElementById('f-time').value : '';
+  const note    = document.getElementById('f-note').value.trim();
+  const ids     = [...document.querySelectorAll('.mchk:checked')].map(c => c.value);
+
   if (!name || !date) return;
-  const data = { name, date, time, note, ids };
+  if (useRange && dateEnd && dateEnd < date) {
+    alert('結束日期不能早於開始日期');
+    return;
+  }
+
+  const data = { name, date, dateEnd: dateEnd || date, period, time, note, ids };
   if (editingId) {
     await updateDoc(doc(db,'events',editingId), data);
   } else {
