@@ -94,6 +94,8 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#fff;color:#111}
 .btn-save{font-size:13px;font-weight:500;padding:7px 16px;border:none;
   border-radius:8px;background:#111;color:#fff;cursor:pointer;font-family:inherit}
 .loading{text-align:center;padding:40px;color:#bbb;font-size:14px}
+  .ev-range { font-size: 11px; color: #888; margin-top: 2px; }
+.ev-note  { font-size: 11px; color: #aaa; margin-top: 5px; line-height: 1.5; }
 </style>
 </head>
 <body>
@@ -105,8 +107,32 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#fff;color:#111}
   <div class="modal">
     <div class="modal-title" id="modal-title">新增行程</div>
     <div class="field"><label>行程名稱</label><input id="f-name" placeholder="例：爸爸回診"/></div>
-    <div class="field"><label>日期</label><input id="f-date" type="date"/></div>
-    <div class="field"><label>時間</label><input id="f-time" type="time" value="10:00"/></div>
+    <div class="field">
+  <label>日期</label>
+  <input id="f-date" type="date"/>
+  <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:#888;cursor:pointer">
+    <input type="checkbox" id="use-range" onchange="toggleDateEnd()"> 設定結束日期（跨日行程）
+  </label>
+</div>
+<div class="field" id="date-end-row" style="display:none">
+  <label>結束日期</label>
+  <input id="f-date-end" type="date"/>
+</div>
+    <div class="field">
+  <label>時間</label>
+  <select id="f-period" onchange="toggleTimeInput()"
+    style="width:100%;font-size:14px;padding:8px 11px;border:1px solid #ddd;border-radius:8px;font-family:inherit">
+    <option value="allday">整日</option>
+    <option value="morning">上午</option>
+    <option value="afternoon">下午</option>
+    <option value="evening">晚上</option>
+    <option value="custom">自訂時間...</option>
+  </select>
+</div>
+<div class="field" id="time-custom-row" style="display:none">
+  <label>自訂時間</label>
+  <input id="f-time" type="time" value="10:00"/>
+</div>
     <div class="field">
       <label>參與成員（可複選）</label>
       <div class="member-wrap" id="member-wrap"></div>
