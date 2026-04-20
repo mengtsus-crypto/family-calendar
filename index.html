@@ -58,15 +58,38 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#fff;color:#111}
   background:transparent;cursor:pointer;font-size:18px;color:#888;font-family:inherit}
 .wds{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px}
 .wd{text-align:center;font-size:11px;font-weight:500;color:#bbb;padding:4px 0}
-.dgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
-.dc{min-height:68px;border-radius:7px;padding:5px 4px;cursor:pointer;border:1px solid transparent}
+.dgrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+}
+.dc {
+  min-height: 68px;
+  border-radius: 7px;
+  padding: 5px 4px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  overflow: hidden;
+  min-width: 0;
+  word-break: keep-all;
+}
 .dc:hover{background:#f8f8f8}
 .dc.other{opacity:0.3}
 .dc.today .dn{background:#111;color:#fff;border-radius:50%}
 .dn{font-size:11px;font-weight:500;width:20px;height:20px;
   display:flex;align-items:center;justify-content:center;margin-bottom:3px}
-.dev{font-size:9px;font-weight:500;padding:2px 4px;border-radius:3px;
-  margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dev {
+  font-size: 9px;
+  font-weight: 500;
+  padding: 2px 4px;
+  border-radius: 3px;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  display: block;
+}
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.32);
   z-index:100;align-items:flex-start;justify-content:center;padding-top:48px}
 .overlay.on{display:flex}
